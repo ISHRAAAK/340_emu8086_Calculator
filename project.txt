@@ -1,0 +1,208 @@
+data segment 
+    
+    ask_input db "Enter 1 for single input operations or 2 for dual input operations: $"
+    single_input_operations db "Choose operation: 1/x (|), square (^): $"
+    value1 db "Enter first integer value: $"
+    value2 db "Enter second integer value: $"
+    operation db "Enter which operation would you like to make: $"
+    choice db "sum(+), sub(-), mul (*), div (/): $"
+    a db ?
+    b db ?
+
+stack segment
+    dw 128 dup(0)
+ends
+
+code segment
+start:
+    mov ax, data
+    mov ds, ax
+    mov es, ax
+
+    ; Ask for number of inputs
+    lea dx, ask_input
+    mov ah, 9
+    int 21h
+    
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h     
+    
+    
+    mov ah, 1
+    int 21h
+    cmp al, '1'
+    je single_input ; jumps to single input
+    cmp al, '2'
+    je dual_input
+
+single_input:   ; takes only 1 value (integer)
+    lea dx, value1
+    mov ah, 9
+    int 21h 
+    
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h     
+    
+    
+    mov ah, 1
+    int 21h
+    
+    
+    
+    sub al, '0'   ; removes the hexa value so that later can be added
+    mov a, al
+    lea dx, single_input_operations
+    mov ah, 9
+    int 21h 
+    
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h     
+    
+    
+    mov ah, 1
+    int 21h
+    ; compares the choises and jumps to that label accordingly 
+    cmp al, '|'
+    je calculate_reciprocal
+    cmp al, '^'
+    je calculate_square
+    jmp exit
+
+
+
+calculate_reciprocal:     ; calculates 1/x where x is input from user
+    mov al,1
+    mov dl,a
+    div dl
+    call digit_convert
+    jmp exit
+
+calculate_square:         ; calculates sqare 
+    mov al, a
+    mul al
+    call digit_convert
+    jmp exit
+
+dual_input: ; if user wants to perform sub,add,mul,div among 2 inputs
+    lea dx, value1  ;prompt message
+    mov ah, 9
+    int 21h  
+    
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h     
+    
+    
+    mov ah, 1
+    int 21h
+    sub al, '0'
+    mov a, al
+
+    lea dx, value2     ;prompt message
+    mov ah, 9
+    int 21h 
+    
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h     
+    
+    
+    mov ah, 1
+    int 21h
+    sub al, '0'
+    mov b, al
+
+    lea dx, operation     ;prompt message for options
+    mov ah, 9
+    int 21h
+    lea dx, choice
+    mov ah, 9
+    int 21h
+    mov ah, 1
+    int 21h 
+    ; jumps to label according to option choosen
+    cmp al, "+"
+    je addition
+    cmp al, "-"
+    je subtraction
+    cmp al, "*"
+    je multiplication
+    cmp al, "/"
+    je division
+
+addition:
+    mov al, a
+    mov bl, b
+    add al, bl
+    call digit_convert
+    jmp exit
+
+subtraction:
+    mov al, a
+    mov bl, b
+    sub al, bl
+    call digit_convert
+    jmp exit
+
+multiplication:
+    mov al, a
+    mov bl, b
+    mul bl
+    call digit_convert
+    jmp exit
+
+division:
+    mov al, a
+    mov bl, b
+    mov ah, 0
+    div bl
+    call digit_convert
+    jmp exit
+
+digit_convert:
+    cmp al,57
+    jg dcn2
+    add al, 30h    ; converts the digit, previously removed the hexa value for convenient
+    mov dl, al
+    mov ah, 2
+    int 21h 
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h
+    ret
+    
+    dcn2:
+    
+    add al, 41h    ; converts the digit, previously removed the hexa value for convenient
+    mov dl, al
+    mov ah, 2
+    int 21h 
+    mov ah,2  ;next line
+    mov dl,10
+    int 21h
+    mov dl,13
+    int 21h     
+    
+    ret
+
+exit:
+    mov ax, 4c00h ; exit to operating system.
+    int 21h    
+ends
+
+end start ; set entry point and stop the assembler.
